@@ -29,8 +29,6 @@ COLORS: Final[Dict[str, discord.Color]] = {
     'white': discord.Color.from_rgb(0, 0, 0)
 }
 COLORS_KEYS = tuple(COLORS.keys())
-print(type(COLORS_KEYS))
-print(type(COLORS_KEYS[0]))
 
 
 class Essential(base.Command):
