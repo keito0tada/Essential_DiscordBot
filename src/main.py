@@ -43,7 +43,7 @@ class Essential(base.Command):
                            footer_icon='下端に表示したい画像のurl', color='色', is_author='作者情報を表示するか否か')
     async def embed(self, interaction: discord.Interaction, title: str, description: Optional[str],
                     image: Optional[str], thumbnail: Optional[str], footer: Optional[str], footer_icon: Optional[str],
-                    color: Literal[COLORS_KEYS], is_author: bool = True):
+                    color: Optional[Literal[COLORS_KEYS]], is_author: bool = True):
         embed = discord.Embed(
             title=title, description=description, color=COLORS[color]
         )
