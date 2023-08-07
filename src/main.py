@@ -96,10 +96,10 @@ class SendGroupCog(command.GroupCog, name='send'):
                 title='エラー: 不正な時刻が指定されています。', description='以下の範囲で入力してください。', colour=discord.Colour.red()
             )
             embed.add_field(name='{0} <= year <= {1}'.format(datetime.MINYEAR, datetime.MAXYEAR))
-            embed.add_field(name='1 <= month <= 12', value='')
-            embed.add_field(name='1 <= day <= 28~31', value='')
-            embed.add_field(name='0 <= hour <= 23', value='')
-            embed.add_field(name='0 <= minute <= 59', value='')
+            embed.add_field(name='1 <= month <= 12', value=' ')
+            embed.add_field(name='1 <= day <= 28~31', value=' ')
+            embed.add_field(name='0 <= hour <= 23', value=' ')
+            embed.add_field(name='0 <= minute <= 59', value=' ')
             await interaction.response.send_message(
                 embed=embed, ephemeral=True
             )
