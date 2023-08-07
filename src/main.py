@@ -86,25 +86,47 @@ class SendGroupCog(command.GroupCog, name='send'):
                       footer: Optional[str], footer_icon: Optional[str], author: Optional[Literal['author']],
                       color: Literal[COLORS_KEYS] = 'black', interval_days: int = 0, interval_hours: int = 0,
                       interval_minutes: int = 0):
+        # エラー処理
         try:
             datetime_reserved = datetime.datetime(
                 year=year, month=month, day=day, hour=hour, minute=minute, tzinfo=ZONE_TOKYO
             )
-            interval = datetime.timedelta(days=interval_days, hours=interval_hours, minutes=interval_minutes)
-            if datetime_reserved < datetime.datetime.now(tz=ZONE_TOKYO) + datetime.timedelta(minutes=1):
-                raise ValueError
         except ValueError:
+            embed = discord.Embed(
+                title='エラー: 不正な時刻が指定されています。', description='以下の範囲で入力してください。', colour=discord.Colour.red()
+            )
+            embed.add_field(name='{0} <= year <= {1}'.format(datetime.MINYEAR, datetime.MAXYEAR))
+            embed.add_field(name='1 <= month <= 12', value='')
+            embed.add_field(name='1 <= day <= 28~31', value='')
+            embed.add_field(name='0 <= hour <= 23', value='')
+            embed.add_field(name='0 <= minute <= 59', value='')
             await interaction.response.send_message(
-                embed=discord.Embed(title='エラー: 不正な時刻が指定されています。', colour=discord.Colour.red()),
-                ephemeral=True)
+                embed=embed, ephemeral=True
+            )
             return
-
+        try:
+            interval = datetime.timedelta(days=interval_days, hours=interval_hours, minutes=interval_minutes)
+        except OverflowError:
+            embed = discord.Embed(
+                title='エラー: 不正な時間が指定されています。', description='入力が大きすぎます。', colour=discord.Colour.red()
+            )
+            await interaction.response.send_message(
+                embed=embed, ephemeral=True
+            )
+        if datetime_reserved < datetime.datetime.now(tz=ZONE_TOKYO) + datetime.timedelta(minutes=1):
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    title='エラー: 不正な時刻が指定されています。', description='現在時刻の1分後以降を指定してください。', colour=discord.Colour.red()),
+                ephemeral=True
+            )
+            return
         embed = generate_embed(
             title=title, description=description, image=image, thumbnail=thumbnail,
             footer=footer, footer_icon=footer_icon, color=COLORS[color], author=author,
             user=interaction.user
         )
 
+        # 予約処理
         if interval_days == 0 and interval_hours == 0 and interval_minutes == 0:
             with self.database_connector.cursor() as cur:
                 cur.execute(
