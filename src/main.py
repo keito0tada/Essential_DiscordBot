@@ -12,7 +12,7 @@ import psycopg2.extras
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from .UtilityClasses_DiscordBot import command
+from .UtilityClasses_DiscordBot import base
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 ZONE_TOKYO = zoneinfo.ZoneInfo('Asia/Tokyo')
@@ -56,8 +56,12 @@ def generate_embed(title: str, description: Optional[str], image: Optional[str],
 
     return embed
 
+class Runner(base.Runner):
+    async def run(self, interaction: discord.Interaction):
+        pass
 
-class SendGroupCog(command.GroupCog, name='send'):
+
+class SendGroupCog(base.GroupCog, name='send'):
     def __init__(self, bot: commands.Bot, allow_duplicated: bool = False):
         super().__init__(bot=bot, allow_duplicated=allow_duplicated)
         self.database_connector = psycopg2.connect(DATABASE_URL)
@@ -74,6 +78,12 @@ class SendGroupCog(command.GroupCog, name='send'):
         print(times)
         self.sender.change_interval(time=times)
         print(self.sender.time)
+
+    @app_commands.command(description='sendコマンドの設定ができます。')
+    @app_commands.describe()
+    async def setting(self, interaction: discord.Interaction):
+        pass
+
 
     @app_commands.command(description='メッセージの予約投稿ができます。')
     @app_commands.describe(title='タイトル', description='詳細', image='大きく表示したい画像のurl',
@@ -191,7 +201,7 @@ class SendGroupCog(command.GroupCog, name='send'):
             results = cur.fetchall()
         next_repetitions = []
         for channel_id, user_id, embed, timestamp, interval in results:
-            print(embed)
+            embed_temp = embed.copy()
             try:
                 channel = await self.bot.fetch_channel(channel_id)
             except discord.NotFound:
@@ -202,26 +212,26 @@ class SendGroupCog(command.GroupCog, name='send'):
                 if user_id not in [member.id for member in channel.members]:
                     continue
 
-            if 'title' in embed:
-                embed['title'] = embed['title'].format(
+            if 'title' in embed_temp:
+                embed_temp['title'] = embed_temp['title'].format(
                     datetime=now.strftime('%Y年%m月%d日%H時%M分'),
                     date=now.strftime('%Y年%m月%d日'), time=now.strftime('%H時%M分'),
                     year=now.year, month=now.month, day=now.day, hour=now.hour, minute=now.minute, second=now.second
                 )
-            if 'description' in embed:
-                embed['description'] = embed['description'].format(
+            if 'description' in embed_temp:
+                embed_temp['description'] = embed_temp['description'].format(
                     datetime=now.strftime('%Y年%m月%d日%H時%M分'),
                     date=now.strftime('%Y年%m月%d日'), time=now.strftime('%H時%M分'),
                     year=now.year, month=now.month, day=now.day, hour=now.hour, minute=now.minute, second=now.second
                 )
-            if 'footer' in embed:
-                embed['footer'] = embed['footer'].format(
+            if 'footer' in embed_temp:
+                embed_temp['footer'] = embed_temp['footer'].format(
                     datetime=now.strftime('%Y年%m月%d日%H時%M分'),
                     date=now.strftime('%Y年%m月%d日'), time=now.strftime('%H時%M分'),
                     year=now.year, month=now.month, day=now.day, hour=now.hour, minute=now.minute, second=now.second
                 )
 
-            await channel.send(embed=discord.Embed.from_dict(embed))
+            await channel.send(embed=discord.Embed.from_dict(embed_temp))
             if interval is not None:
                 next_repetitions.append((channel_id, user_id, embed, timestamp + interval, interval))
         with self.database_connector.cursor() as cur:
@@ -242,7 +252,7 @@ class SendGroupCog(command.GroupCog, name='send'):
         self.sender.restart()
 
 
-class Essential(command.Command):
+class Essential(base.Command):
     def __init__(self, bot: discord.ext.commands.Bot):
         super().__init__(bot=bot)
 
